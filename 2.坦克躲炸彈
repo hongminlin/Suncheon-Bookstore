@@ -1,0 +1,111 @@
+import pygame  # 引入 Pygame 庫，用於遊戲開發
+import random  # 引入 random 庫，用於生成隨機數
+
+# 初始化 Pygame
+pygame.init()
+
+# 設置顯示窗口的寬度和高度
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))  # 創建顯示窗口
+pygame.display.set_caption("Tank Bomb Dodge")  # 設定窗口標題
+
+# 載入背景圖片並調整大小至窗口尺寸
+background_image = pygame.image.load('C:/Users/user/Downloads/images (7).png').convert()
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
+
+# 載入坦克圖片並縮小一半大小
+tank_image = pygame.image.load('C:/Users/user/Downloads/下載 (33).png').convert_alpha()
+tank_image = pygame.transform.scale(tank_image, (tank_image.get_width() // 2, tank_image.get_height() // 2))
+
+# 載入音效
+explosion_sound = pygame.mixer.Sound('C:/Users/user/Downloads/爆炸聲.mp3')  # 爆炸音效
+fail_sound = pygame.mixer.Sound('C:/Users/user/Downloads/失敗.mp3')  # 失敗音效
+
+# 定義顏色
+BLACK = (0, 0, 0)  # 黑色
+
+# 玩家設定
+player_pos = [WIDTH // 2, HEIGHT - tank_image.get_height()]  # 玩家坦克初始位置
+player_speed = 7  # 玩家移動速度
+
+# 炸彈設定
+bomb_size = 30  # 炸彈的大小
+bombs = []  # 存儲炸彈的列表
+bomb_speed = random.randint(5, 10)  # 隨機設定炸彈的下落速度
+
+# 遊戲變量
+score = 0  # 初始分數
+game_over = False  # 遊戲是否結束的標誌
+
+# 播放爆炸音效
+explosion_sound.play(-1)  # 重複播放爆炸音效
+
+# 主遊戲循環
+while True:
+    for event in pygame.event.get():  # 處理遊戲事件
+        if event.type == pygame.QUIT:  # 如果事件類型是退出
+            pygame.quit()  # 關閉 Pygame
+            exit()  # 退出程序
+
+    # 取得當前按鍵狀態
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and player_pos[0] > 0:  # 如果按下左箭頭鍵且坦克未超出左邊界
+        player_pos[0] -= player_speed  # 向左移動坦克
+    if keys[pygame.K_RIGHT] and player_pos[0] < WIDTH - tank_image.get_width():  # 如果按下右箭頭鍵且坦克未超出右邊界
+        player_pos[0] += player_speed  # 向右移動坦克
+
+    # 隨機生成炸彈
+    if random.randint(1, 20) == 1:  # 有 1/20 的機率生成炸彈
+        bombs.append([random.randint(0, WIDTH - bomb_size), 0])  # 在頂部隨機位置生成炸彈
+
+    # 更新炸彈位置
+    for bomb in bombs[:]:  # 使用炸彈列表副本進行迭代
+        bomb[1] += bomb_speed  # 炸彈下落
+        # 檢查炸彈是否碰到坦克
+        if (player_pos[0] < bomb[0] + bomb_size and
+            player_pos[0] + tank_image.get_width() > bomb[0] and
+            player_pos[1] < bomb[1] + bomb_size and
+            player_pos[1] + tank_image.get_height() > bomb[1]):
+            game_over = True  # 設定遊戲結束標誌
+            fail_sound.play()  # 播放失敗音效
+
+        # 如果炸彈到達底部且沒有碰到坦克，得分加一
+        if bomb[1] >= HEIGHT:  # 如果炸彈到達底部
+            bombs.remove(bomb)  # 移除該炸彈
+            score += 1  # 分數加一
+
+    # 清空屏幕並繪製背景
+    screen.blit(background_image, (0, 0))  # 畫背景圖片
+
+    # 繪製坦克
+    screen.blit(tank_image, (player_pos[0], player_pos[1]))  # 畫玩家坦克
+
+    # 繪製炸彈
+    for bomb in bombs:  # 畫所有炸彈
+        pygame.draw.rect(screen, BLACK, (*bomb, bomb_size, bomb_size))
+
+    # 顯示得分
+    font = pygame.font.Font(None, 36)  # 設定字體和大小
+    text = font.render(f"Score: {score}", True, (0, 0, 0))  # 渲染分數文字
+    screen.blit(text, (10, 10))  # 將分數顯示在屏幕左上角
+
+    # 檢查是否達到勝利條件
+    if score >= 100:  # 如果分數達到或超過 100
+        win_text = font.render("You Win!", True, (0, 255, 0))  # 顯示勝利訊息
+        screen.blit(win_text, (WIDTH // 2 - 50, HEIGHT // 2))  # 在屏幕中央顯示訊息
+        pygame.display.flip()  # 更新顯示
+        pygame.time.delay(2000)  # 顯示勝利畫面 2 秒
+        break  # 結束遊戲循環
+
+    if game_over:  # 如果遊戲結束
+        explosion_sound.stop()  # 停止爆炸音效
+        over_text = font.render("Game Over", True, (255, 0, 0))  # 顯示遊戲結束訊息
+        screen.blit(over_text, (WIDTH // 2 - 50, HEIGHT // 2))  # 在屏幕中央顯示訊息
+
+    pygame.display.flip()  # 更新屏幕顯示
+    pygame.time.delay(30)  # 控制遊戲速度，延遲 30 毫秒
+
+# 結束遊戲
+pygame.quit()
+
+
