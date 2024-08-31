@@ -1,0 +1,122 @@
+import pygame  # 引入 Pygame 庫，用於遊戲開發
+import random  # 引入 random 庫，用於隨機生成位置
+import sys  # 引入 sys 庫，用於退出遊戲
+
+# 初始化 Pygame
+pygame.init()
+
+# 設定顯示窗口的寬度和高度
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))  # 創建顯示窗口
+pygame.display.set_caption("乒乓球打磚塊")  # 設定窗口標題
+
+# 顏色定義
+WHITE = (255, 255, 255)  # 白色
+BLUE = (0, 0, 255)  # 藍色
+
+# 設定撥片的大小和位置
+paddle_width, paddle_height = 100, 10  # 撥片的寬度和高度
+paddle = pygame.Rect(WIDTH // 2 - paddle_width // 2, HEIGHT - 20, paddle_width, paddle_height)  # 撥片位置
+
+# 設定球的大小和初始位置
+ball_radius = 10  # 球的半徑
+ball = pygame.Rect(WIDTH // 2, HEIGHT // 2, ball_radius * 2, ball_radius * 2)  # 球的位置
+ball_speed = [5, -5]  # 球的初始移動速度
+
+# 載入磚塊圖片
+brick_image = pygame.image.load("C:\\Users\\user\\Downloads\\下載 (37).png")  # 磚塊圖片
+bricks = []  # 用來存放磚塊的列表
+
+# 載入背景圖片
+background_image = pygame.image.load("C:\\Users\\user\\Downloads\\下載.png")  # 背景圖片
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))  # 縮放背景圖片至窗口大小
+
+# 載入碰撞音效
+collapse_sound = pygame.mixer.Sound("C:\\Users\\user\\Downloads\\倒塌聲.mp3")  # 碰撞音效
+
+# 遊戲變數
+level = 1  # 初始關卡
+score = 0  # 初始分數
+font = pygame.font.Font(None, 36)  # 設定字體和大小
+winning_score = 50  # 設定獲勝所需的分數為 50 分
+
+# 創建磚塊函數，根據關卡數量創建磚塊
+def create_bricks(level):
+    bricks.clear()  # 清空現有的磚塊
+    num_bricks = level  # 根據關卡設定磚塊數量
+    for _ in range(num_bricks):
+        x = random.randint(0, WIDTH - brick_image.get_width())  # 隨機生成磚塊的 x 位置
+        y = random.randint(50, HEIGHT // 2 - brick_image.get_height())  # 隨機生成磚塊的 y 位置 (上半部)
+        bricks.append(pygame.Rect(x, y, brick_image.get_width(), brick_image.get_height()))  # 將磚塊加入列表
+
+# 開始第一關
+create_bricks(level)
+
+# 遊戲主循環
+while True:
+    for event in pygame.event.get():  # 遍歷所有事件
+        if event.type == pygame.QUIT:  # 如果事件類型為退出
+            pygame.quit()  # 關閉 Pygame
+            sys.exit()  # 退出程序
+
+    # 取得當前按鍵狀態
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and paddle.left > 0:  # 如果按下左箭頭鍵且撥片沒有超出左邊界
+        paddle.left -= 10  # 向左移動撥片
+    if keys[pygame.K_RIGHT] and paddle.right < WIDTH:  # 如果按下右箭頭鍵且撥片沒有超出右邊界
+        paddle.right += 10  # 向右移動撥片
+
+    # 移動球
+    ball.left += ball_speed[0]  # 更新球的 x 位置
+    ball.top += ball_speed[1]  # 更新球的 y 位置
+
+    # 檢查球是否碰撞到邊界
+    if ball.left <= 0 or ball.right >= WIDTH:  # 如果球碰到左右邊界
+        ball_speed[0] = -ball_speed[0]  # 反轉球的 x 方向速度
+    if ball.top <= 0:  # 如果球碰到上邊界
+        ball_speed[1] = -ball_speed[1]  # 反轉球的 y 方向速度
+    if ball.bottom >= HEIGHT:  # 如果球落到底部
+        pygame.quit()  # 關閉 Pygame
+        sys.exit()  # 退出程序
+
+    if ball.colliderect(paddle):  # 如果球碰到撥片
+        ball_speed[1] = -ball_speed[1]  # 反轉球的 y 方向速度
+
+    # 檢查球是否碰撞到磚塊
+    for brick in bricks[:]:  # 複製磚塊列表，避免迴圈中修改列表
+        if ball.colliderect(brick):  # 如果球碰到磚塊
+            bricks.remove(brick)  # 移除該磚塊
+            ball_speed[1] = -ball_speed[1]  # 反轉球的 y 方向速度
+            collapse_sound.play()  # 播放碰撞音效
+            score += 1  # 增加分數
+            break  # 跳出迴圈
+
+    # 檢查是否需要升級關卡
+    if not bricks:  # 如果所有磚塊都被移除
+        level += 1  # 增加關卡
+        create_bricks(level)  # 創建新的磚塊
+
+    # 檢查是否達到贏的分數
+    if score >= winning_score:  # 如果分數達到或超過贏的分數
+        win_text = font.render("You Win!", True, (0, 0, 0))  # 顯示贏的訊息
+        screen.blit(win_text, (WIDTH // 2 - win_text.get_width() // 2, HEIGHT // 2 - win_text.get_height() // 2))  # 在屏幕中央顯示訊息
+        pygame.display.flip()  # 更新顯示
+        pygame.time.delay(3000)  # 顯示贏的訊息後延遲3秒
+        pygame.quit()  # 關閉 Pygame
+        sys.exit()  # 退出程序
+
+    # 畫面更新
+    screen.blit(background_image, (0, 0))  # 畫背景圖片
+    pygame.draw.rect(screen, BLUE, paddle)  # 畫撥片
+    pygame.draw.circle(screen, BLUE, (ball.centerx, ball.centery), ball_radius)  # 畫球
+    for brick in bricks:  # 畫所有的磚塊
+        screen.blit(brick_image, (brick.x, brick.y))
+
+    # 顯示分數
+    score_text = font.render(f"Score: {score}", True, (0, 0, 0))  # 渲染分數文字
+    screen.blit(score_text, (10, 10))  # 將分數顯示在屏幕左上角
+
+    pygame.display.flip()  # 更新屏幕顯示
+    pygame.time.delay(30)  # 控制遊戲速度，延遲30毫秒
+
+
