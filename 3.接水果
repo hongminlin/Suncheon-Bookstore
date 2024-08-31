@@ -1,0 +1,106 @@
+import pygame  # 引入 Pygame 庫，用於遊戲開發
+import random  # 引入 random 庫，用於生成隨機數
+
+# 初始化 Pygame
+pygame.init()
+
+# 設定遊戲屏幕大小
+screen_width = 800  # 屏幕寬度
+screen_height = 600  # 屏幕高度
+screen = pygame.display.set_mode((screen_width, screen_height))  # 創建顯示窗口
+
+# 設定遊戲標題
+pygame.display.set_caption("水果捕捉")  # 設定窗口標題
+
+# 加載並縮放背景圖和籃子圖
+background = pygame.image.load(r"C:\Users\user\Downloads\images.png")  # 加載背景圖像
+background = pygame.transform.scale(background, (screen_width, screen_height))  # 縮放背景圖像以適應屏幕
+basket_img = pygame.image.load(r"C:\Users\user\Downloads\下載 (3).png")  # 加載籃子圖像
+basket_width = basket_img.get_width()  # 獲取籃子圖像的寬度
+basket_height = basket_img.get_height()  # 獲取籃子圖像的高度
+
+# 加載水果圖像
+fruit_img = pygame.image.load(r"C:\Users\user\Downloads\下載 (4).png")  # 加載水果圖像
+fruit_width = fruit_img.get_width()  # 獲取水果圖像的寬度
+fruit_height = fruit_img.get_height()  # 獲取水果圖像的高度
+
+# 水果參數
+fruit_speed = 5  # 水果下落速度
+fruit_x = random.randint(0, screen_width - fruit_width)  # 隨機生成水果的X座標
+fruit_y = 0  # 水果的初始Y座標，從頂部開始
+
+# 計分
+score = 0  # 初始分數
+font = pygame.font.SysFont(None, 55)  # 設定顯示分數的字體和大小
+
+# 顯示分數函數
+def show_score(score):
+    value = font.render("Score: " + str(score), True, (0, 0, 0))  # 渲染分數文字
+    screen.blit(value, [10, 10])  # 將分數顯示在屏幕左上角
+
+# 顯示勝利信息函數
+def show_win_message():
+    win_text = font.render("You Win!", True, (0, 255, 0))  # 渲染勝利文字
+    screen.blit(win_text, [screen_width // 2 - 100, screen_height // 2 - 30])  # 在屏幕中央顯示勝利信息
+    pygame.display.update()  # 更新顯示
+    pygame.time.delay(3000)  # 停留 3 秒讓玩家看到贏得信息
+
+# 遊戲主循環
+running = True
+while running:
+    # 畫背景圖
+    screen.blit(background, (0, 0))  # 繪製背景圖像
+
+    # 事件處理
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:  # 如果事件類型是退出
+            running = False  # 結束遊戲循環
+
+    # 取得滑鼠位置並更新籃子 X 座標
+    mouse_x = pygame.mouse.get_pos()[0]  # 獲取滑鼠的 X 座標
+    basket_x = mouse_x - basket_width // 2  # 設定籃子的 X 座標，使其跟隨滑鼠
+    basket_y = screen_height - basket_height - 10  # 設定籃子的 Y 座標，靠近底部
+
+    # 防止籃子超出屏幕
+    if basket_x < 0:  # 如果籃子超出左邊界
+        basket_x = 0  # 將籃子限制在左邊界
+    elif basket_x > screen_width - basket_width:  # 如果籃子超出右邊界
+        basket_x = screen_width - basket_width  # 將籃子限制在右邊界
+
+    # 畫籃子
+    screen.blit(basket_img, (basket_x, basket_y))  # 繪製籃子圖像
+
+    # 水果下落
+    fruit_y += fruit_speed  # 增加水果的 Y 座標，讓它下落
+    screen.blit(fruit_img, (fruit_x, fruit_y))  # 繪製水果圖像
+
+    # 檢查水果是否被捕捉
+    if basket_y < fruit_y + fruit_height and basket_y + basket_height > fruit_y:  # 如果籃子與水果在Y軸上重疊
+        if basket_x < fruit_x + fruit_width and basket_x + basket_width > fruit_x:  # 如果籃子與水果在X軸上重疊
+            score += 1  # 捕捉到水果，分數加 1
+            fruit_x = random.randint(0, screen_width - fruit_width)  # 重新隨機生成水果的 X 座標
+            fruit_y = 0  # 將水果重置到頂部
+            fruit_speed += 0.5  # 隨著得分增加，水果速度加快
+
+    # 檢查水果是否落地
+    if fruit_y > screen_height:  # 如果水果到達底部
+        fruit_y = 0  # 將水果重置到頂部
+        fruit_x = random.randint(0, screen_width - fruit_width)  # 隨機生成水果的 X 座標
+        fruit_speed = 5  # 重置水果速度
+
+    # 顯示分數
+    show_score(score)  # 調用函數顯示當前分數
+
+    # 檢查是否得分達到 50
+    if score >= 50:  # 如果分數達到 50
+        show_win_message()  # 顯示勝利信息
+        running = False  # 結束遊戲循環
+
+    # 更新屏幕
+    pygame.display.update()  # 更新屏幕顯示
+
+    # 設定 FPS
+    pygame.time.Clock().tick(30)  # 控制遊戲速度，每秒更新 30 次
+
+# 結束 Pygame
+pygame.quit()
